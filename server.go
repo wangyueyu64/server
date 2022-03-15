@@ -9,22 +9,56 @@ import (
 	"time"
 )
 
+var codeMap = make(map[string]string)
+
 //func Register(c echo.Context) error {
 //	account := c.QueryParam("account")
 //	password := c.QueryParam("password")
-//	mail := c.QueryParam("mail")
+//	email := c.QueryParam("email")
+//
 //
 //	return c.String(http.StatusOK, "register success")
 //}
 
 func Login(c echo.Context) error {
+	account := c.QueryParam("account")
+	password := c.QueryParam("password")
+	code := c.QueryParam("code")
 
-	return c.String(http.StatusOK, "login success")
+	_, ok := codeMap[account] // 如果key1存在则ok == true，否则ok为false
+	if ok == false {
+		return c.String(http.StatusForbidden, "请先发送验证码")
+	}
+
+	if codeMap[account] == "" {
+		return c.String(http.StatusForbidden, "验证码失效，请重新发送")
+	}
+
+	if code != codeMap[account] {
+		return c.String(http.StatusForbidden, "验证码错误！")
+	}
+
+	ok, err := Verify(account, password)
+	if err != nil {
+		fmt.Printf("Verify err:%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+	if ok == false {
+		return c.String(http.StatusForbidden, "密码错误！")
+	}
+
+	return c.String(http.StatusOK, "登陆成功")
 }
 
-func SendEmail(email string) string {
+func SendEmail(c echo.Context) error {
+	account := c.QueryParam("account")
+	email := c.QueryParam("email")
+
 	rand.Seed(time.Now().Unix())
 	num := fmt.Sprintf("%06v", rand.Int31n(1000000))
+
+	codeMap[account] = num
+	fmt.Println(num)
 
 	m := gomail.NewMessage()
 	m.SetAddressHeader("From", "2578103136@qq.com", "网络资产管理") // 发件人
@@ -38,7 +72,7 @@ func SendEmail(email string) string {
 	if err := d.DialAndSend(m); err != nil {
 		panic(err)
 	}
-	return ""
+	return nil
 }
 
 //// SendMsg 向手机发送验证码
