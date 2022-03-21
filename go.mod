@@ -3,9 +3,14 @@ module Server
 go 1.17
 
 require (
-	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
-	github.com/labstack/echo v3.3.10+incompatible // indirect
+	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
+	github.com/go-sql-driver/mysql v1.6.0
+	github.com/labstack/echo v3.3.10+incompatible
+	github.com/sirupsen/logrus v1.8.1
+)
+
+require (
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -16,4 +21,5 @@ require (
 	golang.org/x/sys v0.0.0-20211103235746-7861aae1554b // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 )

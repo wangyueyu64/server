@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-gomail/gomail"
+	"github.com/google/uuid"
 	"github.com/labstack/echo"
 	"math/rand"
 	"net/http"
@@ -40,7 +41,7 @@ func Login(c echo.Context) error {
 
 	ok, err := Verify(account, password)
 	if err != nil {
-		fmt.Printf("Verify err:%v", err)
+		logger.Errorf("Verify err:%v", err)
 		return c.String(http.StatusInternalServerError, "服务器错误！")
 	}
 	if ok == false {
@@ -51,6 +52,7 @@ func Login(c echo.Context) error {
 }
 
 func SendEmail(c echo.Context) error {
+
 	account := c.QueryParam("account")
 	email := c.QueryParam("email")
 
@@ -70,8 +72,37 @@ func SendEmail(c echo.Context) error {
 
 	d := gomail.NewPlainDialer("smtp.qq.com", 465, "2578103136@qq.com", "wgcojyvwwfyuebag") // 发送邮件服务器、端口、发件人账号、发件人密码
 	if err := d.DialAndSend(m); err != nil {
-		panic(err)
+		logger.Errorf("send verification code err: %v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
 	}
+	return nil
+}
+
+func Add(c echo.Context) error {
+
+	macAddr := c.QueryParam("mac")
+	model := c.QueryParam("model")
+	os := c.QueryParam("os")
+
+	Uuid := fmt.Sprintf("%v", uuid.NewString())
+
+	if err := AddComuputer(Uuid, macAddr, model, os); err != nil {
+		logger.Errorf("AddComputer err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return nil
+}
+
+func Del(c echo.Context) error {
+
+	computerId := c.QueryParam("id")
+
+	if err := DelComuputer(computerId); err != nil {
+		logger.Errorf("DelComputer err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
 	return nil
 }
 

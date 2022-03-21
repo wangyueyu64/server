@@ -32,35 +32,35 @@ func InitDB() {
 	DB.SetMaxIdleConns(10)
 	//验证连接
 	if err := DB.Ping(); err != nil {
-		fmt.Println("opon database fail")
+		logger.Errorf("opon database fail")
 		return
 	}
 	fmt.Println("connnect success")
 }
-func InsertUser(userId string, password string, email string, department string, authorityLevel int) (bool, error) {
+func InsertUser(userId string, password string, email string, department string, authorityLevel int) error {
 	//开启事务
 	tx, err := DB.Begin()
 	if err != nil {
-		fmt.Println("start tx fail")
-		return false, nil
+		logger.Errorf("start tx fail")
+		return nil
 	}
 	//准备sql语句
 	stmt, err := tx.Prepare("INSERT INTO user (`user_id`, `password`, `email`, `department`, `authority_level` ) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
-		fmt.Printf("Prepare fail error:%v\n", err)
-		return false, err
+		logger.Errorf("Prepare fail error:%v\n", err)
+		return err
 	}
 	//将参数传递到sql语句中并且执行
 	res, err := stmt.Exec(userId, password, email, department, authorityLevel)
 	if err != nil {
-		fmt.Println("Exec fail")
-		return false, err
+		logger.Errorf("Exec fail")
+		return err
 	}
 
 	//将事务提交
 	tx.Commit()
-	fmt.Println(res.LastInsertId())
-	return true, nil
+	logger.Println(res.LastInsertId())
+	return nil
 }
 
 func Verify(userId string, password string) (bool, error) {
@@ -80,7 +80,7 @@ func Verify(userId string, password string) (bool, error) {
 	var p string
 	for rows.Next() {
 		if err = rows.Scan(&p); err != nil {
-			fmt.Printf("scan err :%v", err)
+			logger.Errorf("scan err :%v", err)
 			return false, err
 		}
 
@@ -92,4 +92,54 @@ func Verify(userId string, password string) (bool, error) {
 	}
 
 	return true, nil
+}
+func AddComuputer(computer_id string, mac string, model string, os string) error {
+	//开启事务
+	tx, err := DB.Begin()
+	if err != nil {
+		logger.Errorf("start tx fail")
+		return nil
+	}
+	//准备sql语句
+	stmt, err := tx.Prepare("INSERT INTO computer (`computer_id`, `mac`, `model`, `os`) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		logger.Errorf("Prepare fail error:%v\n", err)
+		return err
+	}
+	//将参数传递到sql语句中并且执行
+	res, err := stmt.Exec(computer_id, mac, model, os)
+	if err != nil {
+		logger.Errorf("Exec fail")
+		return err
+	}
+
+	//将事务提交
+	tx.Commit()
+	logger.Println(res.LastInsertId())
+	return nil
+}
+func DelComuputer(id string) error {
+	//开启事务
+	tx, err := DB.Begin()
+	if err != nil {
+		logger.Errorf("start tx fail")
+		return nil
+	}
+	//准备sql语句
+	stmt, err := tx.Prepare("DELETE FROM computer WHERE computer_id = ?")
+	if err != nil {
+		logger.Errorf("Prepare fail error:%v\n", err)
+		return err
+	}
+	//将参数传递到sql语句中并且执行
+	res, err := stmt.Exec(id)
+	if err != nil {
+		logger.Errorf("Exec fail")
+		return err
+	}
+
+	//将事务提交
+	tx.Commit()
+	logger.Println(res.LastInsertId())
+	return nil
 }
