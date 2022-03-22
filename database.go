@@ -68,7 +68,7 @@ func Verify(userId string, password string) (bool, error) {
 	//查询表
 	rows, err := DB.Query(" select password from user where user_id = ?", userId)
 	if err != nil {
-		fmt.Printf("Query err :%v", err)
+		logger.Errorf("Query err :%v", err)
 		return false, err
 	}
 
@@ -93,7 +93,7 @@ func Verify(userId string, password string) (bool, error) {
 
 	return true, nil
 }
-func AddComuputer(computer_id string, mac string, model string, os string) error {
+func AddComputer(computer_id string, mac string, model string, os string) error {
 	//开启事务
 	tx, err := DB.Begin()
 	if err != nil {
@@ -142,4 +142,113 @@ func DelComuputer(id string) error {
 	tx.Commit()
 	logger.Println(res.LastInsertId())
 	return nil
+}
+
+type Computer struct {
+	ComputerId string `json:"computer_id"`
+	Mac        string `json:"mac"`
+	Model      string `json:"model"`
+	Os         string `json:"os"`
+	User       string `json:"user"`
+	Level      int    `json:"level"`
+}
+
+func FindComputer(id string, model string, os string, user string) ([]Computer, error) {
+
+	var rows *sql.Rows
+	var err error
+	//不筛选
+	if id == "" && model == "" && os == "" && user == "" {
+		rows, err = DB.Query(" select * from computer ")
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//只用id
+	if id != "" && model == "" && os == "" && user == "" {
+		rows, err = DB.Query(" select * from computer where computer_id = ?", id)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//只用model
+	if id == "" && model != "" && os == "" && user == "" {
+		rows, err = DB.Query(" select * from computer where model = ?", model)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//只用os
+	if id == "" && model == "" && os != "" && user == "" {
+		rows, err = DB.Query(" select * from computer where os = ?", os)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//只用user
+	if id == "" && model == "" && os == "" && user != "" {
+		rows, err = DB.Query(" select * from computer where  user = ?", user)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//model os
+	if id == "" && model != "" && os != "" && user == "" {
+		rows, err = DB.Query(" select * from computer where model = ? and os = ?", model, os)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//model user
+	if id == "" && model != "" && os == "" && user != "" {
+		rows, err = DB.Query(" select * from computer where model = ? and user = ?", model, user)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//os user
+	if id == "" && model == "" && os != "" && user != "" {
+		rows, err = DB.Query(" select * from computer where os = ? and user = ?", os, user)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+	//model os user
+	if id == "" && model != "" && os != "" && user != "" {
+		rows, err = DB.Query(" select * from computer where model = ? and os = ? and user = ?", model, os, user)
+		if err != nil {
+			logger.Errorf("Query err :%v", err)
+			return nil, err
+		}
+	}
+
+	//用完关闭
+	defer rows.Close()
+
+	var computer Computer
+	computerSlice := make([]Computer, 0)
+
+	for rows.Next() {
+		if err = rows.Scan(&computer.ComputerId, &computer.Mac, &computer.Model, &computer.Os, &computer.User, &computer.Level); err != nil {
+			logger.Errorf("scan err :%v", err)
+			return nil, err
+		}
+		computerSlice = append(computerSlice, computer)
+	}
+
+	//computerJson, err := json.Marshal(computerSlice)
+	//if err != nil {
+	//	logger.Errorf("Marshal err :%v", err)
+	//	return nil, err
+	//}
+
+	return computerSlice, nil
 }

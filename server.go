@@ -86,7 +86,7 @@ func Add(c echo.Context) error {
 
 	Uuid := fmt.Sprintf("%v", uuid.NewString())
 
-	if err := AddComuputer(Uuid, macAddr, model, os); err != nil {
+	if err := AddComputer(Uuid, macAddr, model, os); err != nil {
 		logger.Errorf("AddComputer err :%v", err)
 		return c.String(http.StatusInternalServerError, "服务器错误！")
 	}
@@ -104,6 +104,21 @@ func Del(c echo.Context) error {
 	}
 
 	return nil
+}
+
+func Find(c echo.Context) error {
+	computerId := c.QueryParam("id")
+	model := c.QueryParam("model")
+	os := c.QueryParam("os")
+	user := c.QueryParam("user")
+
+	result, err := FindComputer(computerId, model, os, user)
+	if err != nil {
+		logger.Errorf("FindComputer err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 //// SendMsg 向手机发送验证码
