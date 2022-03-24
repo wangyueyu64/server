@@ -24,11 +24,12 @@ func main() {
 	e.POST("/computer/add", Add)
 	e.DELETE("/computer/del", Del)
 	e.GET("/computer/find", Find)
+	e.POST("/computer/update", Update)
 
-	e.GET("/test", test)
+	//e.GET("/test", test)
 
 	//启动http server, 并监听8080端口，冒号（:）前面为空的意思就是绑定网卡所有Ip地址，本机支持的所有ip地址都可以访问。
-	e.Start(":8080")
+	e.Start(":8081")
 
 	DB.Close()
 }

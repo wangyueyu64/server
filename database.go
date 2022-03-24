@@ -123,7 +123,7 @@ func DelComuputer(id string) error {
 	tx, err := DB.Begin()
 	if err != nil {
 		logger.Errorf("start tx fail")
-		return nil
+		return err
 	}
 	//准备sql语句
 	stmt, err := tx.Prepare("DELETE FROM computer WHERE computer_id = ?")
@@ -244,11 +244,129 @@ func FindComputer(id string, model string, os string, user string) ([]Computer, 
 		computerSlice = append(computerSlice, computer)
 	}
 
-	//computerJson, err := json.Marshal(computerSlice)
-	//if err != nil {
-	//	logger.Errorf("Marshal err :%v", err)
-	//	return nil, err
-	//}
-
 	return computerSlice, nil
+}
+
+func UpdateComputer(id string, model string, os string, user string) error {
+
+	var res sql.Result
+	var err error
+
+	//开启事务
+	tx, err := DB.Begin()
+	if err != nil {
+		logger.Errorf("start tx fail")
+		return err
+	}
+
+	//model
+	if model != "" && os == "" && user == "" {
+		stmt, err := tx.Prepare("UPDATE computer SET model = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(model, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//只用os
+	if model == "" && os != "" && user == "" {
+		stmt, err := tx.Prepare("UPDATE computer SET os = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(os, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//只用user
+	if model == "" && os == "" && user != "" {
+		stmt, err := tx.Prepare("UPDATE computer SET user = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(user, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//model os
+	if model != "" && os != "" && user == "" {
+		stmt, err := tx.Prepare("UPDATE computer SET model = ?, os = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(model, os, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//model user
+	if model != "" && os == "" && user != "" {
+		stmt, err := tx.Prepare("UPDATE computer SET model = ?, user = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(model, user, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//os user
+	if model == "" && os != "" && user != "" {
+		stmt, err := tx.Prepare("UPDATE computer SET os = ?, user = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(os, user, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//model os user
+	if model != "" && os != "" && user != "" {
+		stmt, err := tx.Prepare("UPDATE computer SET model = ?, os = ?, user = ? WHERE computer_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(model, os, user, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//将事务提交
+	tx.Commit()
+	logger.Println(res.LastInsertId())
+	return nil
+
 }

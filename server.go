@@ -121,6 +121,22 @@ func Find(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+func Update(c echo.Context) error {
+	computerId := c.QueryParam("id")
+	model := c.QueryParam("model")
+	os := c.QueryParam("os")
+	user := c.QueryParam("user")
+
+	err := UpdateComputer(computerId, model, os, user)
+	if err != nil {
+		logger.Errorf("UpdateComputer err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return nil
+
+}
+
 //// SendMsg 向手机发送验证码
 //func SendMsg(tel string, code string) string {
 //	client, err := dysmsapi.NewClientWithAccessKey("cn-hangzhou", "<accesskeyId>", "<accessSecret>")
