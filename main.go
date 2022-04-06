@@ -21,10 +21,14 @@ func main() {
 	e.POST("/user/sendEmail", SendEmail)
 	//e.POST("/user/register", Register)
 	e.POST("/user/login", Login)
+	e.POST("/user/update", UpdateUser)
+	e.GET("/user/getLevel", GetLevel)
+
 	e.POST("/computer/add", Add)
 	e.DELETE("/computer/del", Del)
 	e.GET("/computer/find", Find)
 	e.POST("/computer/update", Update)
+	e.POST("/computer/updatelevel", UpdateLevel)
 
 	//e.GET("/test", test)
 
@@ -33,6 +37,7 @@ func main() {
 
 	DB.Close()
 }
+
 func test(c echo.Context) error {
 
 	return c.String(http.StatusOK, "登陆成功")

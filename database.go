@@ -83,8 +83,6 @@ func Verify(userId string, password string) (bool, error) {
 			logger.Errorf("scan err :%v", err)
 			return false, err
 		}
-
-		fmt.Println(p)
 	}
 
 	if p != password {
@@ -369,4 +367,181 @@ func UpdateComputer(id string, model string, os string, user string) error {
 	logger.Println(res.LastInsertId())
 	return nil
 
+}
+func UpdateComputerLevel(id string, level string) error {
+
+	var res sql.Result
+	var err error
+
+	//开启事务
+	tx, err := DB.Begin()
+	if err != nil {
+		logger.Errorf("start tx fail")
+		return err
+	}
+
+	stmt, err := tx.Prepare("UPDATE computer SET security_level = ? WHERE computer_id = ?")
+	if err != nil {
+		logger.Errorf("Prepare fail error:%v\n", err)
+		return err
+	}
+	//将参数传递到sql语句中并且执行
+	res, err = stmt.Exec(level, id)
+	if err != nil {
+		logger.Errorf("Exec fail")
+		return err
+	}
+
+	//将事务提交
+	tx.Commit()
+	logger.Println(res.LastInsertId())
+	return nil
+
+}
+func UpdateUsermsg(id string, department string, level string, leader string) error {
+
+	var res sql.Result
+	var err error
+
+	//开启事务
+	tx, err := DB.Begin()
+	if err != nil {
+		logger.Errorf("start tx fail")
+		return err
+	}
+
+	//department
+	if department != "" && level == "" && leader == "" {
+		stmt, err := tx.Prepare("UPDATE user SET department = ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(department, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//level
+	if department == "" && level != "" && leader == "" {
+		stmt, err := tx.Prepare("UPDATE user SET authority_level= ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(level, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//leader
+	if department == "" && level == "" && leader != "" {
+		stmt, err := tx.Prepare("UPDATE user SET leader= ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(leader, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//department level
+	if department != "" && level != "" && leader == "" {
+		stmt, err := tx.Prepare("UPDATE user SET department= ?, authority_level = ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(department, level, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//department leader
+	if department != "" && level == "" && leader != "" {
+		stmt, err := tx.Prepare("UPDATE user SET department= ?, leader = ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(department, leader, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//level leader
+	if department == "" && level != "" && leader != "" {
+		stmt, err := tx.Prepare("UPDATE user SET authority_level= ?, leader = ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(level, leader, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//
+	if department != "" && level != "" && leader != "" {
+		stmt, err := tx.Prepare("UPDATE user SET department = ?, authority_level = ?, leader = ? WHERE user_id = ?")
+		if err != nil {
+			logger.Errorf("Prepare fail error:%v\n", err)
+			return err
+		}
+		//将参数传递到sql语句中并且执行
+		res, err = stmt.Exec(department, level, leader, id)
+		if err != nil {
+			logger.Errorf("Exec fail")
+			return err
+		}
+	}
+
+	//将事务提交
+	tx.Commit()
+	logger.Println(res.LastInsertId())
+
+	return nil
+}
+func GetUserLevel(userid string) (string, error) {
+	var rows *sql.Rows
+	var err error
+	//不筛选
+
+	//只用id
+	rows, err = DB.Query(" select authority_level from user where user_id = ?", userid)
+	if err != nil {
+		logger.Errorf("Query err :%v", err)
+		return "", err
+	}
+
+	//用完关闭
+	defer rows.Close()
+
+	var level string
+	for rows.Next() {
+		if err = rows.Scan(&level); err != nil {
+			logger.Errorf("scan err :%v", err)
+			return "", err
+		}
+	}
+	return level, nil
 }

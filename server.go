@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -20,6 +21,8 @@ var codeMap = make(map[string]string)
 //
 //	return c.String(http.StatusOK, "register success")
 //}
+
+var temp int = 0
 
 func Login(c echo.Context) error {
 	account := c.QueryParam("account")
@@ -45,7 +48,34 @@ func Login(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "服务器错误！")
 	}
 	if ok == false {
-		return c.String(http.StatusForbidden, "密码错误！")
+		if temp < 2 {
+			temp++
+			return c.String(http.StatusForbidden, "密码错误！")
+		}
+		if temp == 2 {
+			temp = 0
+			// 获取用户等级
+			l, err := GetUserLevel(account)
+			if err != nil {
+				logger.Errorf("GetUserLevel err :%v", err)
+				return err
+			}
+
+			l2, err2 := strconv.Atoi(l)
+			if err2 != nil {
+				logger.Errorf("Atoi err :%v", err)
+				return err
+			}
+
+			l2--
+			err = UpdateUsermsg(account, "", strconv.Itoa(l2), "")
+			if err != nil {
+				logger.Errorf("UpdateUsermsg err : %v", err)
+				return err
+			}
+			return c.String(http.StatusForbidden, "连续三次密码错误！用户安全等级已调整！")
+		}
+
 	}
 
 	return c.String(http.StatusOK, "登陆成功")
@@ -137,118 +167,43 @@ func Update(c echo.Context) error {
 
 }
 
-//// SendMsg 向手机发送验证码
-//func SendMsg(tel string, code string) string {
-//	client, err := dysmsapi.NewClientWithAccessKey("cn-hangzhou", "<accesskeyId>", "<accessSecret>")
-//	request := dysmsapi.CreateSendSmsRequest()
-//	request.Scheme = "https"
-//	request.PhoneNumbers = tel             //手机号变量值
-//	request.SignName = "凌睿工作室"             //签名
-//	request.TemplateCode = "SMS_19586XXXX" //模板编码
-//	request.TemplateParam = "{\"code\":\"" + code + "\"}"
-//	response, err := client.SendSms(request)
-//	fmt.Println(response.Code)
-//	if response.Code == "isv.BUSINESS_LIMIT_CONTROL" {
-//		return "frequency_limit"
-//	}
-//	if err != nil {
-//		fmt.Print(err.Error())
-//		return "failed"
-//	}
-//	return "success"
-//}
-//
-//// Code 随机验证码
-//func Code() string {
-//	rand.Seed(time.Now().UnixNano())
-//	code := rand.Intn(899999) + 100000
-//	res := strconv.Itoa(code) //转字符串返回
-//	return res
-//}
-//
-//// 接收手机号并发送验证码
-//func getValidationHandler(c *gin.Context) {
-//	var user User
-//	c.ShouldBind(&user)
-//	code := Code()
-//	fmt.Println(code)
-//
-//	sendRes := SendMsg(user.Tel, code)
-//	if sendRes == "failed" {
-//		c.JSON(http.StatusInternalServerError, gin.H{
-//			"msg": "error",
-//		})
-//	} else {
-//		if !SetRedis(user.UserId, code) {
-//			c.JSON(http.StatusInternalServerError, gin.H{
-//				"msg": "error",
-//			})
-//		}
-//		c.JSON(http.StatusOK, gin.H{
-//			"msg": sendRes,
-//		})
-//	}
-//}
-//
-//// Validation 在注册时检查验证码
-//func Validation(validation string, userId string) int {
-//	var flag int
-//	getcode := GetRedis(userId)
-//
-//	if validation == getcode {
-//		flag = 1
-//	} else {
-//		flag = 0
-//	}
-//	return flag
-//}
-//func registerHandler(c *gin.Context) {
-//	var user User
-//	err := c.BindJSON(&user)
-//	if err != nil {
-//		fmt.Println(err)
-//		c.JSON(http.StatusBadRequest, gin.H{
-//			"msg": "error",
-//		})
-//		return
-//	}
-//
-//	if Validation(user.Validation, user.UserId) == 0 {
-//		c.JSON(http.StatusOK, gin.H{
-//			"msg": "wrong_code",
-//		})
-//		return
-//	}
-//}
-//func SetRedis(userId string, code string) bool {
-//	conn, err := redis.Dial("tcp", "127.0.0.1:6379")
-//	if err != nil {
-//		fmt.Println("connect redis error :", err)
-//		return false
-//	}
-//	defer conn.Close()
-//	_, err = conn.Do("SET", userId, code)
-//	if err != nil {
-//		fmt.Println("redis set error:", err)
-//		return false
-//	}
-//	_, err = conn.Do("expire", userId, 300)
-//	if err != nil {
-//		fmt.Println("set expire error: ", err)
-//		return false
-//	}
-//	return true
-//}
-//
-//func GetRedis(userId string) string {
-//	conn, err := redis.Dial("tcp", "127.0.0.1:6379")
-//	if err != nil {
-//		fmt.Println("connect redis error :", err)
-//	}
-//	defer conn.Close()
-//	code, err := redis.String(conn.Do("GET", userId))
-//	if err != nil {
-//		fmt.Println("redis get error:", err)
-//	}
-//	return code
-//}
+func UpdateUser(c echo.Context) error {
+	userId := c.QueryParam("id")
+	department := c.QueryParam("department")
+	level := c.QueryParam("level")
+	leader := c.QueryParam("leader")
+
+	err := UpdateUsermsg(userId, department, level, leader)
+	if err != nil {
+		logger.Errorf("UpdateUser err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return nil
+}
+func UpdateLevel(c echo.Context) error {
+	computerId := c.QueryParam("id")
+	level := c.QueryParam("level")
+
+	err := UpdateComputerLevel(computerId, level)
+	if err != nil {
+		logger.Errorf("UpdateComputer err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return nil
+
+}
+
+func GetLevel(c echo.Context) error {
+
+	userId := c.QueryParam("userid")
+
+	result, err := GetUserLevel(userId)
+	if err != nil {
+		logger.Errorf("getUserLevel err :%v", err)
+		return c.String(http.StatusInternalServerError, "服务器错误！")
+	}
+
+	return c.String(http.StatusOK, result)
+}
